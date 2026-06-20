@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wörterzerleger</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 760px; }
+    input, button { font: inherit; padding: .7rem; }
+    input { width: min(100%, 28rem); }
+    pre { background: #f4f4f4; padding: 1rem; overflow-x: auto; border-radius: .5rem; }
+    .piece { margin-left: 1rem; line-height: 1.7; }
+  </style>
+</head>
+<body>
+  <h1>Wörterzerleger</h1>
+  <p>C++ engine running through WebAssembly. Fancy little sausage machine.</p>
+
+  <input id="word" value="wissenschaft" autocomplete="off" />
+  <button id="analyze">Analyze</button>
+
+  <h2>Result</h2>
+  <div id="pretty"></div>
+  <pre id="raw"></pre>
+
+  <script src="wordbreaker.js"></script>
+  <script>
+    let analyzeCpp;
+
+    function renderNode(node, depth = 0) {
+      const div = document.createElement('div');
+      div.className = 'piece';
+      div.style.marginLeft = `${depth * 1.25}rem`;
+      div.textContent = `${node.word} — ${node.meaning}${node.known ? '' : ' (?)'}`;
+      for (const child of node.children || []) div.appendChild(renderNode(child, depth + 1));
+      return div;
+    }
+
+    Module.onRuntimeInitialized = () => {
+      Module.ccall('wb_init', 'number', [], []);
+
+      analyzeCpp = (word) => {
+        const ptr = Module.ccall('wb_analyze', 'number', ['string'], [word]);
+        const json = Module.UTF8ToString(ptr);
+        Module.ccall('wb_free', null, ['number'], [ptr]);
+        return JSON.parse(json);
+      };
+
+      document.getElementById('analyze').disabled = false;
+      runAnalysis();
+    };
+
+    function runAnalysis() {
+      if (!analyzeCpp) return;
+      const word = document.getElementById('word').value.trim();
+      const result = analyzeCpp(word);
+      document.getElementById('raw').textContent = JSON.stringify(result, null, 2);
+      const pretty = document.getElementById('pretty');
+      pretty.innerHTML = '';
+      pretty.appendChild(renderNode(result));
+    }
+
+    document.getElementById('analyze').disabled = true;
+    document.getElementById('analyze').addEventListener('click', runAnalysis);
+    document.getElementById('word').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') runAnalysis();
+    });
+  </script>
+</body>
+</html>
