@@ -2,6 +2,14 @@
 # Format: word|meaning|components
 # Cleaned from dictionary(2).txt: duplicates removed by word, fuller entries preferred.
 
+Wohlfühlen | To feel comfortable {
+	"root": "fühlen"
+	"prefix": "wohl"
+	"reflexive": true,
+	"meaning": "to feel comfortable"
+	"type": "verb"
+	}
+
 nehmen | To take |
 unternehmen | To undertake / venture | unter, nehmen |
 geben | To give |
